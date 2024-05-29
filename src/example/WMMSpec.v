@@ -70,8 +70,8 @@ st0 mem
 -*
 (⌜View.le vw vw'⌝)
 -∗
-(St_tgt (st0, mem) -∗ (wpoints_to l v vw') -∗
-(wmemory_black mem)-∗ stsim tid E r g Q ps true itr_src (ktr_tgt (vw', v)))
+(∀vw'', St_tgt (st0, mem) -∗ (wpoints_to l v vw'') -∗
+(wmemory_black mem)-∗ stsim tid E r g Q ps true itr_src (ktr_tgt (vw'', v)))
 -∗
 (stsim tid E r g Q ps pt itr_src
 (map_event (OMod.emb_callee tgt_mod (WMem.mod)) (WMem.load_fun (vw', l, Ordering.plain)) >>= ktr_tgt))
@@ -99,9 +99,21 @@ iIntros "_ _". rred.
 
 
 iPoseProof ("Q" with "[ST_TGT]") as "Q".
-iFrame. 
+iFrame.
+iPoseProof ("Q" with "[i0PTR]") as "Q".
+iFrame.
+iPoseProof ("Q" with "[i1MEM]") as "Q".
+iFrame.
+iFrame.
+Qed.
 
+Lemma wstore_fun_spec : True.
 Abort.
+
+Lemma wfaa_fun_spec : True.
+Abort.
+
+
 
 (*
 (wmemory_black m)
@@ -110,5 +122,4 @@ Abort.
 -∗
 ((wmemory_black m) ∗ (⌜(View.le vw0 vw1) /\ (v0 = v1)⌝) ∗ #=>(wpoints_to l v0 vw1))
 *)
-(map_event (OMod.emb_callee tgt_mod (SCMem.mod gvars)) (SCMem.load_fun l) >>= ktr_tgt)
-End SPEC.
+End WSPEC.

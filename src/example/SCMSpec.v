@@ -146,8 +146,8 @@ Section SPEC.
   
   
   iPoseProof ("Q" with "[ST_TGT]") as "Q". 
-  { iFrame.
-  }
+  iFrame.
+  
   iPoseProof ("Q" with "[i0PTR]") as "Q".
   iFrame.
   
