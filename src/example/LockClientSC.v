@@ -679,7 +679,7 @@ Section SIM.
     apply OneShot.shot_agree in AGR. subst k0.
     iPoseProof (ObligationRA.pending_sum with "KPENDh i0PENDh") as "KPEND".
 
-    iInv "LOCK_INV" as "I1" "K1".
+    iInv "LOCK_INV" as "I1" "K1". 
     do 4 (iDestruct "I1" as "[% I1]").
     iDestruct "I1" as "[i1B1 [i1B2 [i1MEM [i1STGT I1]]]]".
 
