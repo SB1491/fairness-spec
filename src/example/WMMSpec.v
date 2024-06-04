@@ -61,23 +61,44 @@ l v vw vw'
 tid E R_src R_tgt (Q : R_src -> R_tgt -> iProp)
 r g ps pt
 itr_src ktr_tgt
-st0 mem 
+st0 mem lis
 :
 (St_tgt (st0, mem))
 -∗
 (wpoints_to l v vw)
 -∗
 (wmemory_black mem)
--*
+-∗
 (⌜View.le vw vw'⌝)
 -∗
-(∀vw'', St_tgt (st0, mem) -∗ (wpoints_to l v vw'') -∗ (⌜View.le vw' vw''⌝)
+(ObligationRA.duty (inl tid) lis)
 -∗
-(wmemory_black mem)-∗ stsim tid E r g Q ps true itr_src (ktr_tgt (vw'', v)))
+(∀vw'', St_tgt (st0, mem) -∗ (wpoints_to l v vw'') -∗ (⌜View.le vw' vw''⌝) -∗
+(∃ j, (ObligationRA.duty (inl tid) ((j, Ord.S Ord.O) :: lis))) 
+-∗ (wmemory_black mem)-∗ stsim tid E r g Q ps true itr_src (ktr_tgt (vw'', v)))
 -∗
 (stsim tid E r g Q ps pt itr_src
 (map_event (OMod.emb_callee tgt_mod (WMem.mod)) (WMem.load_fun (vw', l, Ordering.plain)) >>= ktr_tgt))
 .
+iIntros "ST_TGT WPOINTS_TO MEM_BLACK %VW DUTY Q".
+rred. iApply stsim_getR.
+iSplit. iFrame.
+rred.
+iApply stsim_chooseR. iIntros "%".
+destruct x. destruct x as [[lc1 val] to]. des. rename y into READ. rred.
+iPoseProof (wpoints_to_view_mon with "WPOINTS_TO") as "WPOINTS_TO". eapply VW.
+
+iPoseProof (wmemory_ra_load with "MEM_BLACK WPOINTS_TO") as "[i1MEM [%VW2 >i0PTR]]".
+eapply READ. eauto. eauto. des. subst val.
+iApply (stsim_fairR with "[DUTY]").
+{  i. instantiate (1:= []). ss. clear - IN.
+unfold prism_fmap, WMem.missed in IN. des_ifs.
+}
+{  i.  instantiate (1:=[]) in IN. inv IN. }
+{ econs. }
+{ auto. }
+iIntros "A B". rred.
+
 
 Abort.
 
