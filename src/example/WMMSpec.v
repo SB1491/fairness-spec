@@ -61,7 +61,7 @@ l v vw vw'
 tid E R_src R_tgt (Q : R_src -> R_tgt -> iProp)
 r g ps pt
 itr_src ktr_tgt
-st0 mem lis
+st0 mem
 :
 (St_tgt (st0, mem))
 -∗
@@ -71,11 +71,8 @@ st0 mem lis
 -∗
 (⌜View.le vw vw'⌝)
 -∗
-(ObligationRA.duty (inl tid) lis)
--∗
 (∀vw'', St_tgt (st0, mem) -∗ (wpoints_to l v vw'') -∗ (⌜View.le vw' vw''⌝) -∗
-(∃ j, (ObligationRA.duty (inl tid) ((j, Ord.S Ord.O) :: lis))) 
--∗ (wmemory_black mem)-∗ stsim tid E r g Q ps true itr_src (ktr_tgt (vw'', v)))
+(wmemory_black mem)-∗ stsim tid E r g Q ps true itr_src (ktr_tgt (vw'', v)))
 -∗
 (stsim tid E r g Q ps pt itr_src
 (map_event (OMod.emb_callee tgt_mod (WMem.mod)) (WMem.load_fun (vw', l, Ordering.plain)) >>= ktr_tgt))
