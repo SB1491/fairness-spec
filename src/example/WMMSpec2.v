@@ -186,21 +186,9 @@ st0 (mem: WMem.t)
 (wmemory_black_strong mem)
 -∗
 (
-∀vw'', ∀ v, ∀ j ,
-St_tgt (st0, mem) -∗ 
+∀vw'', ∀ m1,
+St_tgt (st0, m1) -∗ 
 (wpoints_to_full l V k P Q)
--∗
-(
-     ( FairRA.white (j) 1)
-     ∗
-     (lift_wProp P v vw'')
-) 
-     ∨ 
-(   
-     lift_wProp Q v vw'' 
-     ∗
-     (⌜View.le V vw'' ⌝)
-)
 -∗
 (⌜View.le vw vw''⌝) -∗ (wmemory_black_strong mem)-∗ 
 stsim tid E r g Q' ps true itr_src (ktr_tgt (vw''))
@@ -209,6 +197,37 @@ stsim tid E r g Q' ps true itr_src (ktr_tgt (vw''))
 (stsim tid E r g Q' ps pt itr_src
 (map_event (OMod.emb_callee tgt_mod' (WMem.mod)) (WMem.store_fun (vw, l, val, Ordering.acqrel)) >>= ktr_tgt))
 .
+iIntros "ST_TGT WPOINTS_TO_FULL WMEM Q".
+rred. iApply stsim_getR.
+iSplit. iFrame.
+
+rred.
+iApply stsim_chooseR. iIntros. destruct x. destruct x as [[[lc1 to] sc1] mem1]. des. rred. rename y into WRITE.
+iApply stsim_fairR.
+{ i. instantiate (1:= []). ss. clear - IN. unfold prism_fmap, WMem.missed in IN. des_ifs. }
+{ i. instantiate (1:=[]) in IN. inv IN. }
+{ econs. }
+{ auto. }
+
+
+iIntros "_ _". unfold OMod.emb_callee. rred.
+
+
+
+iApply (stsim_modifyR with "ST_TGT"). iIntros "ST_TGT". rred.
+assert (REL1: View.le V (TView.cur (Local.tview lc1))).
+{ etrans. eapply ARGLE2. auto. }
+
+iPoseProof (wmemory_ra_store_rel with "MEM0 MEM1 WREL1 []") as "[%RVLE >[MEM0 REL]]".
+iPoseProof ("Q" with "[ST_TGT]") as "Q".
+iFrame.
+iPoseProof ("Q" with "[WPOINTS_TO_FULL]") as "Q".
+iFrame.
+iPoseProof ("Q" with "[]") as "Q".
+iPureIntro. eauto.
+
+
+
 Abort.
 
 Lemma wfaa_fun_spec : True.
