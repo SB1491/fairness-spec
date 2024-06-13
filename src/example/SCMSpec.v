@@ -43,33 +43,7 @@ Section SPEC.
 (*     (p : SCMem.val), *)
 (*     SCMem.alloc m0 sz = (m1, p) *)
 (*     → memory_black m0 ⊢ #=> (memory_black m1 ** points_tos p (repeat (SCMem.val_nat 0) sz)) *)
-  Lemma alloc_fun_spec
-        sz
-        tid E R_src R_tgt (Q : R_src -> R_tgt -> iProp)
-        r g ps pt
-        itr_src ktr_tgt
-        st0 (mem : SCMem.t)
-    :
-    ((St_tgt (st0, mem))
-       -∗
-       (∀ l, stsim tid E r g Q ps true itr_src (ktr_tgt l)))
-      ⊢
-      (stsim tid E r g Q ps pt
-             itr_src
-             (map_event (OMod.emb_callee tgt_mod (SCMem.mod gvars)) (SCMem.alloc_fun sz) >>= ktr_tgt)).
-  Proof.
-  iIntros "Q".
-  unfold SCMem.alloc_fun.
-  rred.
-  iApply stsim_getR.
-  iSplit.
-  (* 
-    iIntros "[ST_TGT SIM]".
-    unfold SCMem.alloc_fun.
-    rred. iApply stsim_getR.
-    iSplit. iFrame.  rred.
-  *)
-  Abort.
+
 
 
 

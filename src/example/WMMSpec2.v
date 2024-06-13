@@ -64,50 +64,55 @@ Context `{AUTHVWRA2: @GRA.inG (Auth.t (Excl.t (View.t * unit))) Σ}.
 Context `{AUTHNMNRA: @GRA.inG (Auth.t (NatMapRALarge.t nat)) Σ}.
 
 
+Definition wP (n: nat): wProp := fun c _ => (exists m, (c = nat2c m) /\ (m < n)).
+Definition wQ (n: nat): wProp := fun c _ => ((c = nat2c n)).
 
-Lemma wload_fun_spec''
-l v vw vw' V k P Q'
-tid E R_src R_tgt (Q : R_src -> R_tgt -> iProp)
+Lemma wload_fun_spec'''
+l vw V k P Q 
+tid E R_src R_tgt (Q' : R_src -> R_tgt -> iProp)
 r g ps pt
 itr_src ktr_tgt
 st0 (mem: WMem.t)
 :
 (St_tgt (st0, mem))
 -∗
-(wpoints_to_full l V k P Q')
--∗
-(wpoints_to l v vw)
+(wpoints_to_full l V k (P) (Q))
 -∗
 (wmemory_black_strong mem)
 -∗
-(⌜View.le vw vw'⌝)
--∗
-(∀vw'', 
+(
+∀vw'', ∀ v, ∀ j ,
 St_tgt (st0, mem) -∗ 
-(wpoints_to_full l V k P Q')
+(wpoints_to_full l V k P Q)
 -∗
-(wpoints_to l v vw'')
+(
+     ( FairRA.white (j) 1)
+     ∗
+     (lift_wProp P v vw'')
+) 
+     ∨ 
+(   
+     lift_wProp Q v vw'' 
+     ∗
+     (⌜View.le V vw'' ⌝)
+)
 -∗
-∃ j , FairRA.white (j) 1
+(⌜View.le vw vw''⌝) -∗ (wmemory_black_strong mem)-∗ 
+stsim tid E r g Q' ps true itr_src (ktr_tgt (vw'', v))
+)
 -∗
-(⌜View.le vw' vw''⌝) -∗ (wmemory_black_strong mem)-∗ 
-stsim tid E r g Q ps true itr_src (ktr_tgt (vw'', v)))
--∗
-
-(stsim tid E r g Q ps pt itr_src
-(map_event (OMod.emb_callee tgt_mod' (WMem.mod)) (WMem.load_fun (vw', l, Ordering.acqrel)) >>= ktr_tgt))
+(stsim tid E r g Q' ps pt itr_src
+(map_event (OMod.emb_callee tgt_mod' (WMem.mod)) (WMem.load_fun (vw, l, Ordering.acqrel)) >>= ktr_tgt))
 .
-iIntros "ST_TGT WPOINTS_TO_FULL WPOINTS_TO WMEM %VW Q".
+iIntros "ST_TGT WPOINTS_TO_FULL WMEM  Q".
 rred. iApply stsim_getR.
 iSplit. iFrame.
 rred.
 iApply stsim_chooseR. iIntros "%".
 destruct x. destruct x as [[lc1 val] to]. des. rename y into READ. rred.
-iPoseProof (wpoints_to_view_mon with "WPOINTS_TO") as "WPOINTS_TO". eapply VW.
-
 
 iPoseProof (wmemory_ra_load_acq with "WMEM WPOINTS_TO_FULL") as "[%RVLE [MEM0 [MEM1 WCASES]]]".
-eapply READ. eauto. eauto. des.
+eapply READ. eauto. auto. des.
 
 iDestruct "WCASES" as "[[%WP [% [#WCOR %MISSED]]] | [%WQ %VVLE]]".
 
@@ -118,97 +123,92 @@ iDestruct "WCASES" as "[[%WP [% [#WCOR %MISSED]]] | [%WQ %VVLE]]".
       { ss. }
       iIntros "_ WHITES".
       iDestruct "WHITES" as "[WHITE _]". clear MISSED.
-      rred. 
+      des.  rr in WP. des. rred.
+
       iPoseProof ("Q" with "[ST_TGT]") as "Q".
-iFrame.
-iPoseProof ("Q" with "[MEM1]") as "Q".
-iFrame.
-iPoseProof ("Q" with "[WPOINTS_TO]") as "Q".
-iFrame.
-i
-iPoseProof ("Q" with "[WHITE]") as "Q".
-iFrame.
+      iFrame.
+      iPoseProof ("Q" with "[MEM1]") as "Q".
+      iFrame.
 
-      }
+      iPoseProof ("Q" with "[WHITE]") as "Q".
+      iLeft. 
+      iSplitL "WHITE". { iFrame. }
+      eauto.
+      iFrame.
+      iPoseProof ("Q" with "[]") as "Q".
+      {iPureIntro. eauto. }
+      iPoseProof ("Q" with "[MEM0]") as "Q".
+      iFrame.
+      iFrame.
+}
 
-iIntros "_ WHITES".
-rred.
-
-iPoseProof ("Q" with "[ST_TGT]") as "Q".
-iFrame.
-iPoseProof ("Q" with "[i0PTR]") as "Q".
-iFrame.
-
-iPoseProof ("Q" with "[]") as "Q".
-
-{ iPureIntro. eauto. }
-
-iPoseProof ("Q" with "[i1MEM]") as "Q". iFrame.
-
-iFrame.
-Qed.
-
-
-Lemma wload_fun_spec'
-l v vw vw'
-tid E R_src R_tgt (Q : R_src -> R_tgt -> iProp)
-r g ps pt
-itr_src ktr_tgt
-st0 mem
-:
-(St_tgt (st0, mem))
--∗
-(wpoints_to l v vw)
--∗
-(wmemory_black mem)
--∗
-(⌜View.le vw vw'⌝)
--∗
-(∀vw'', St_tgt (st0, mem) -∗ (wpoints_to l v vw'') 
--∗
-(⌜View.le vw' vw''⌝) -∗ (wmemory_black mem)-∗ 
-stsim tid E r g Q ps true itr_src (ktr_tgt (vw'', v)))
--∗
-(stsim tid E r g Q ps pt itr_src
-(map_event (OMod.emb_callee tgt_mod (WMem.mod)) (WMem.load_fun (vw', l, Ordering.plain)) >>= ktr_tgt))
-.
-iIntros "ST_TGT WPOINTS_TO MEM_BLACK %VW Q".
-rred. iApply stsim_getR.
-iSplit. iFrame.
-rred.
-iApply stsim_chooseR. iIntros "%".
-destruct x. destruct x as [[lc1 val] to]. des. rename y into READ. rred.
-iPoseProof (wpoints_to_view_mon with "WPOINTS_TO") as "WPOINTS_TO". eapply VW.
-
-iPoseProof (wmemory_ra_load with "MEM_BLACK WPOINTS_TO") as "[i1MEM [%VW2 >i0PTR]]".
-eapply READ. eauto. eauto. des. subst val.
-iApply (stsim_fairR).
+      iApply (stsim_fairR).
 {  i. instantiate (1:= []). ss. clear - IN.
 unfold prism_fmap, WMem.missed in IN. des_ifs.
 }
 {  i.  instantiate (1:=[]) in IN. inv IN. }
 { econs. }
 { auto. }
-iIntros "_ WHITES".
+iIntros "_ _".
 rred.
-
+des.
 iPoseProof ("Q" with "[ST_TGT]") as "Q".
 iFrame.
-iPoseProof ("Q" with "[i0PTR]") as "Q".
+iPoseProof ("Q" with "[MEM1]") as "Q".
 iFrame.
 
 iPoseProof ("Q" with "[]") as "Q".
-
-{ iPureIntro. eauto. }
-
-iPoseProof ("Q" with "[i1MEM]") as "Q". iFrame.
-
+iRight. eauto.
+iPoseProof ("Q" with "[]") as "Q".
+{iPureIntro. eauto. }
+iPoseProof ("Q" with "[MEM0]") as "Q".
 iFrame.
+iFrame.
+Unshelve.
+eauto.
 Qed.
+     
+      
 
 
 
-Lemma wstore_fun_spec : True.
+Lemma wstore_fun_spec 
+l vw V k P Q val
+tid E R_src R_tgt (Q' : R_src -> R_tgt -> iProp)
+r g ps pt
+itr_src ktr_tgt
+st0 (mem: WMem.t)
+:
+(St_tgt (st0, mem))
+-∗
+(wpoints_to_full l V k (P) (Q))
+-∗
+(wmemory_black_strong mem)
+-∗
+(
+∀vw'', ∀ v, ∀ j ,
+St_tgt (st0, mem) -∗ 
+(wpoints_to_full l V k P Q)
+-∗
+(
+     ( FairRA.white (j) 1)
+     ∗
+     (lift_wProp P v vw'')
+) 
+     ∨ 
+(   
+     lift_wProp Q v vw'' 
+     ∗
+     (⌜View.le V vw'' ⌝)
+)
+-∗
+(⌜View.le vw vw''⌝) -∗ (wmemory_black_strong mem)-∗ 
+stsim tid E r g Q' ps true itr_src (ktr_tgt (vw''))
+)
+-∗
+(stsim tid E r g Q' ps pt itr_src
+(map_event (OMod.emb_callee tgt_mod' (WMem.mod)) (WMem.store_fun (vw, l, val, Ordering.acqrel)) >>= ktr_tgt))
+.
 Abort.
 
 Lemma wfaa_fun_spec : True.
