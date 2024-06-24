@@ -171,13 +171,6 @@ Qed.
   Qed.
 
 
-  Lemma cas_fun_spec : True.
-  Abort.
 
-  Lemma cas_weak_fun_spec : True.
-  Abort.
-
-  Lemma compare_fun_spec : True.
-  Abort.
 
 End SPEC.

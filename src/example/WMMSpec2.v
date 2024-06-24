@@ -142,7 +142,7 @@ iDestruct "WCASES" as "[[%WP [% [#WCOR %MISSED]]] | [%WQ %VVLE]]".
       iFrame.
 }
 
-      iApply (stsim_fairR).
+iApply (stsim_fairR).
 {  i. instantiate (1:= []). ss. clear - IN.
 unfold prism_fmap, WMem.missed in IN. des_ifs.
 }
@@ -167,17 +167,15 @@ iFrame.
 Unshelve.
 eauto.
 Qed.
-     
-      
-
-
 
 Lemma wstore_fun_spec 
-l vw V k P Q val
+l vw V k P Q val (R: Const.t → View.t → Prop)
 tid E R_src R_tgt (Q' : R_src -> R_tgt -> iProp)
 r g ps pt
 itr_src ktr_tgt
 st0 (mem: WMem.t)
+(VAL: val ≠ Const.undef)
+(WQ: R val View.bot)
 :
 (St_tgt (st0, mem))
 -∗
@@ -185,19 +183,23 @@ st0 (mem: WMem.t)
 -∗
 (wmemory_black_strong mem)
 -∗
-(
-∀vw'', ∀ m1,
-St_tgt (st0, m1) -∗ 
-(wpoints_to_full l V k P Q)
+(⌜View.le V vw⌝)
 -∗
-(⌜View.le vw vw''⌝) -∗ (wmemory_black_strong mem)-∗ 
+(
+∀vw'', ∀ m1, ∀ V', ∀ k',
+St_tgt (st0, m1) -∗ 
+(wpoints_to_full l V' k' (wor P Q) R )
+-∗
+(∃ k o, ObligationRA.black k o ) 
+-∗
+(⌜View.le vw vw''⌝) -∗ (wmemory_black_strong m1)-∗ 
 stsim tid E r g Q' ps true itr_src (ktr_tgt (vw''))
 )
 -∗
 (stsim tid E r g Q' ps pt itr_src
 (map_event (OMod.emb_callee tgt_mod' (WMem.mod)) (WMem.store_fun (vw, l, val, Ordering.acqrel)) >>= ktr_tgt))
 .
-iIntros "ST_TGT WPOINTS_TO_FULL WMEM Q".
+iIntros "ST_TGT WPOINTS_TO_FULL WMEM VW Q".
 rred. iApply stsim_getR.
 iSplit. iFrame.
 
@@ -209,26 +211,28 @@ iApply stsim_fairR.
 { econs. }
 { auto. }
 
-
+destruct lc1. ss.
+iPoseProof (wmemory_ra_store_rel with "WMEM WPOINTS_TO_FULL VW []") as "[%RVLE >[MEM0 REL]]".
+eapply WRITE. eauto. eauto. auto. auto.
+{iPureIntro. apply WQ. }
 iIntros "_ _". unfold OMod.emb_callee. rred.
-
-
-
+do 3 iDestruct "REL" as "[% REL]". ss. iDestruct "REL" as "[%WRLE1 [%WRLE2 >[MEM1 #WOBL]]]".
 iApply (stsim_modifyR with "ST_TGT"). iIntros "ST_TGT". rred.
-assert (REL1: View.le V (TView.cur (Local.tview lc1))).
-{ etrans. eapply ARGLE2. auto. }
-
-iPoseProof (wmemory_ra_store_rel with "MEM0 MEM1 WREL1 []") as "[%RVLE >[MEM0 REL]]".
 iPoseProof ("Q" with "[ST_TGT]") as "Q".
 iFrame.
-iPoseProof ("Q" with "[WPOINTS_TO_FULL]") as "Q".
+iPoseProof ("Q" with "[MEM1]") as "Q".
 iFrame.
 iPoseProof ("Q" with "[]") as "Q".
-iPureIntro. eauto.
+{ iExists k'. iExists o. eauto. } 
+iPoseProof ("Q" with "[]") as "Q".
+iPureIntro. 
+assert (View.le vw (TView.cur tview)) as TV.
+etrans. eauto. eauto. eauto.
+auto.
+iPoseProof ("Q" with "MEM0") as "Q".
+iFrame.
 
-
-
-Abort.
+Qed.
 
 Lemma wfaa_fun_spec : True.
 Abort.
